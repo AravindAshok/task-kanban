@@ -1,0 +1,23 @@
+server:
+  port: 8081
+
+spring:
+  jpa:
+    database: mysql
+    hibernate:
+      ddl-auto: update
+  datasource:
+    url: jdbc:mysql://localhost:3306/kanban
+    username: ${local.mysql.user}
+    password: ${local.mysql.pass}
+
+reward-points:
+  cache:
+    reload:
+      rate: 6 * 60 * 60 * 1000
+
+tasks:
+  daily:
+    reset-time:
+      cron: 0 0 0 * * *
+      zone: Asia/Calcutta
