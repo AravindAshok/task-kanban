@@ -7,6 +7,7 @@ import com.aravind.learn.project.chorekanban.repository.TaskRepository;
 import com.aravind.learn.project.chorekanban.repository.TaskTransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
@@ -19,6 +20,7 @@ import static com.aravind.learn.project.chorekanban.model.Status.TO_DO;
 
 
 @Component
+@Transactional
 public class TaskService {
 
   @Autowired
@@ -55,9 +57,10 @@ public class TaskService {
       task.setStatusLastModified(LocalDate.now());
       task.setStatus(newStatus);
       task = taskRepository.save(task);
-      if (addTransaction) {
+//      TODO: uncomment this after TaskTransaction table is fixed
+      /*if (addTransaction) {
         taskTransactionService.addTransaction(task);
-      }
+      }*/
       return task;
     }
     return task;
