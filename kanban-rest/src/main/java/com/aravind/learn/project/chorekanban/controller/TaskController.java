@@ -70,6 +70,6 @@ public class TaskController {
 
   @GetMapping("/common")
   public List<Task> findCommonTasks() {
-    return taskService.findRepeatableTasks();
+    return taskService.findCommonTasks();
   }
 }
