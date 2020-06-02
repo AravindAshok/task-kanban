@@ -32,7 +32,8 @@ public class Task {
   @NotNull
   @Column(columnDefinition = "varchar(1) default 'N'")
   private Boolean isRepeatableTask;
-  private Integer priority;
+  @Enumerated(EnumType.STRING)
+  private Priority priority;
   private Integer points;
 
 }

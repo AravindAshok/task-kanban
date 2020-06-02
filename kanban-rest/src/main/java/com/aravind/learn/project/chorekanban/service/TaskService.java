@@ -1,20 +1,18 @@
 package com.aravind.learn.project.chorekanban.service;
 
+import com.aravind.learn.project.chorekanban.model.Priority;
 import com.aravind.learn.project.chorekanban.model.Status;
 import com.aravind.learn.project.chorekanban.model.Task;
-import com.aravind.learn.project.chorekanban.model.TaskTransaction;
 import com.aravind.learn.project.chorekanban.repository.TaskRepository;
-import com.aravind.learn.project.chorekanban.repository.TaskTransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+import static com.aravind.learn.project.chorekanban.model.Priority.LOW;
 import static com.aravind.learn.project.chorekanban.model.Status.CREATED;
 import static com.aravind.learn.project.chorekanban.model.Status.TO_DO;
 
@@ -43,6 +41,9 @@ public class TaskService {
 
   public Task createNewTask(Task newTask) {
     newTask.setStatus(CREATED);
+    if(newTask.getPriority() == null) {
+      newTask.setPriority(LOW);
+    }
     return taskRepository.save(newTask);
   }
 
@@ -73,7 +74,7 @@ public class TaskService {
       String newTitle = updatedTask.getTitle() != null ? updatedTask.getTitle() : task.getTitle();
       String newDescription = updatedTask.getDecription() != null ? updatedTask.getDecription() : task.getDecription();
       Integer newPoints = updatedTask.getPoints() != null ? updatedTask.getPoints() : task.getPoints();
-      Integer newPriority = updatedTask.getPriority() != null ? updatedTask.getPriority() : task.getPriority();
+      Priority newPriority = updatedTask.getPriority() != null ? updatedTask.getPriority() : task.getPriority();
 
       task.setTitle(newTitle);
       task.setDecription(newDescription);
@@ -85,8 +86,8 @@ public class TaskService {
     return Optional.ofNullable(null);
   }
 
-  public List<Task> findRepeatableTasks() {
-    return taskRepository.findByIsRepeatableTask(true);
+  public List<Task> findCommonTasks() {
+    return taskRepository.findByIsRepeatableTaskAndStatus(true, CREATED);
   }
 
   public void resetDailyTasksStatusToToDo() {

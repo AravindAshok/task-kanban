@@ -12,6 +12,6 @@ public class BooleanAttributeConverter implements AttributeConverter<Boolean, St
 
   @Override
   public Boolean convertToEntityAttribute(String stringValue) {
-    return stringValue == "Y" ? true : false;
+    return "Y".equalsIgnoreCase(stringValue) ? true : false;
   }
 }

@@ -11,7 +11,7 @@ public interface TaskRepository extends CrudRepository<Task, Long> {
 
   public List<Task> findByStatus(Status status);
 
-  public List<Task> findByIsRepeatableTask(Boolean isRepeatableTask);
+  public List<Task> findByIsRepeatableTaskAndStatus(Boolean isRepeatableTask, Status status);
 
   public List<Task> findByIsDailyTask(Boolean isDailyTask);
 }
