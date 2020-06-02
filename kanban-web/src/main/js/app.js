@@ -8,17 +8,11 @@ const ReactDOM = require('react-dom');
 
 const BASE_URL = "http://localhost:8081"
 
+//these constants represent the enums for the statuses
 const STATUS_CREATED = "CREATED";
-const TO_DO = "TO DO";
-const IN_PROGRESS = "IN PROGRESS";
-const DONE = "DONE";
-
-const STATUSES_VALUE_TO_ENUM = {
-  "CREATED": "CREATED",
-  "TO DO": "TO_DO",
-  "IN PROGRESS": "IN_PROGRESS",
-  "DONE": "DONE"
-}
+const STATUS_TO_DO = "TO_DO";
+const STATUS_IN_PROGRESS = "IN_PROGRESS";
+const STATUS_DONE = "DONE";
 
 const STATUSES_ENUM_TO_VALUE = {
   "CREATED": "CREATED",
@@ -27,27 +21,73 @@ const STATUSES_ENUM_TO_VALUE = {
   "DONE": "DONE"
 }
 
+const STATUSES_VALUE_TO_ENUM = {
+  "CREATED": STATUS_CREATED,
+  "TO DO": STATUS_TO_DO,
+  "IN PROGRESS": STATUS_IN_PROGRESS,
+  "DONE": STATUS_DONE
+}
+
 const NEXT_STATUS = {
-  "CREATED": "TO DO",
-  "TO DO": "IN PROGRESS",
-  "IN PROGRESS": "DONE",
-  "DONE": "TO DO"
+  "CREATED": "TO_DO",
+  "TO_DO": "IN_PROGRESS",
+  "IN_PROGRESS": "DONE",
+  "DONE": "TO_DO"
 }
 
 class App extends React.Component {
 
 	constructor(props) {
 		super(props);
-		this.state = {activeStatus: STATUSES_VALUE_TO_ENUM[TO_DO]};
+		this.state = {activeStatus: STATUS_TO_DO,
+		              taskListKey: STATUS_TO_DO,
+		              commonTaskListKey: STATUS_CREATED
+		              };
 		this.handleActiveStatusChange = this.handleActiveStatusChange.bind(this);
+		this.getTasksByStatusEndpoint = this.getTasksByStatusEndpoint.bind(this);
+		this.getCommonTasksEndpoint = this.getCommonTasksEndpoint.bind(this);
+	  this.getCurrentTimestamp = this.getCurrentTimestamp.bind(this);
 	}
 
-	handleActiveStatusChange(newStatus) {
-	  this.setState({activeStatus: newStatus});
+	getCurrentTimestamp() {
+	  return new Date().getTime();
 	}
+
+	handleActiveStatusChange(prevStatus, newStatus) {
+	  var taskListKey = newStatus;
+	  var commonTaskListKey = STATUS_CREATED;
+	  if(prevStatus == STATUS_CREATED) {
+      const currentTimestamp = this.getCurrentTimestamp();
+
+	    commonTaskListKey = STATUS_CREATED + currentTimestamp;
+      if(newStatus == this.state.activeStatus) {
+        taskListKey = newStatus + currentTimestamp;
+      }
+	  }
+	  this.setState({activeStatus: newStatus,
+	                 taskListKey: taskListKey,
+	                 commonTaskListKey: commonTaskListKey
+	                });
+	}
+
+//---------------------------------------------
+/*
+  One of the following methods should be sent as the endpointFetcher prop while calling TaskList component.
+  That would be the endpoint that TaskList component will call to fetch tasks that need to be shown.
+*/
+	getTasksByStatusEndpoint(status) {
+	  return ("/tasks/tasksByStatus?status=" + status)
+	}
+
+  getCommonTasksEndpoint(status) {
+    return "/tasks/common";
+	}
+//-----------------------------------------------
 
 	render() {
 	  const activeStatus = this.state.activeStatus;
+	  const taskListKey = this.state.taskListKey;
+	  const commonTaskListKey = this.state.commonTaskListKey;
     return (
       <div>
         <Navbar bg="primary">
@@ -57,7 +97,7 @@ class App extends React.Component {
         <br/>
         <Container>
           <Row>
-            <Col md={4} sm={4}>
+            <Col md={2} sm={2}>
               <h3>Status</h3>
               <Nav
                 variant="pills"
@@ -65,23 +105,29 @@ class App extends React.Component {
                 activeKey={activeStatus}
                 onSelect = {
                   (status) => {
-                    this.setState({activeStatus: status});
+                    this.setState({activeStatus: status,
+                                   taskListKey: status
+                                  });
                   }
                 }
                >
                 <Nav.Item>
-                  <Nav.Link eventKey={STATUSES_VALUE_TO_ENUM[TO_DO]}>{TO_DO}</Nav.Link>
+                  <Nav.Link eventKey={STATUS_TO_DO}>{STATUSES_ENUM_TO_VALUE[STATUS_TO_DO]}</Nav.Link>
                 </Nav.Item>
                 <Nav.Item>
-                  <Nav.Link eventKey={STATUSES_VALUE_TO_ENUM[IN_PROGRESS]}>{IN_PROGRESS}</Nav.Link>
+                  <Nav.Link eventKey={STATUS_IN_PROGRESS}>{STATUSES_ENUM_TO_VALUE[STATUS_IN_PROGRESS]}</Nav.Link>
                 </Nav.Item>
                 <Nav.Item>
-                  <Nav.Link eventKey={STATUSES_VALUE_TO_ENUM[DONE]}>{DONE}</Nav.Link>
+                  <Nav.Link eventKey={STATUS_DONE}>{STATUSES_ENUM_TO_VALUE[STATUS_DONE]}</Nav.Link>
                 </Nav.Item>
               </Nav>
             </Col>
-            <Col md={8} sm={8}>
-              <TaskList key={activeStatus} status={activeStatus} onActiveStatusChange={this.handleActiveStatusChange} />
+            <Col md={4} sm={4}>
+              <TaskList key={taskListKey} status={activeStatus} endpointFetcher={this.getTasksByStatusEndpoint} onActiveStatusChange={this.handleActiveStatusChange} />
+            </Col>
+            <Col md={4} sm={4}>
+              <h2>Common Tasks</h2>
+              <TaskList key={commonTaskListKey} status={STATUS_CREATED} endpointFetcher={this.getCommonTasksEndpoint} onActiveStatusChange={this.handleActiveStatusChange} />
             </Col>
           </Row>
         </Container>
@@ -97,16 +143,16 @@ class TaskList extends React.Component {
 		this.handleActiveStatusChange = this.handleActiveStatusChange.bind(this);
 	}
 
-	handleActiveStatusChange(newStatus) {
-	  this.props.onActiveStatusChange(newStatus);
+	handleActiveStatusChange(prevStatus, newStatus) {
+	  this.props.onActiveStatusChange(prevStatus, newStatus);
 	}
 
 	componentDidMount() {
 	  const status = this.props.status;
-	  const URL = BASE_URL + "/tasks/tasksByStatus?status=" + status;
-	  fetch(URL, {headers: {
-       'Cache-Control': 'no-cache'
-     }})
+	  const endpoint = this.props.endpointFetcher(status);
+	  const URL = BASE_URL + endpoint;
+
+	  fetch(URL)
     .then(response => response.json())
     .then(data => this.setState({tasks: data}));
 	}
@@ -143,15 +189,16 @@ class Task extends React.Component{
 	  this.setState({task: this.props.task})
   }
 
-  handleActiveStatusChange(newStatus) {
-    this.props.onActiveStatusChange(newStatus);
+  handleActiveStatusChange(prevStatus, newStatus) {
+    this.props.onActiveStatusChange(prevStatus, newStatus);
   }
 
   updateStatusHandler() {
     var task = this.state.task;
-    const newStatus = STATUSES_VALUE_TO_ENUM[NEXT_STATUS[STATUSES_ENUM_TO_VALUE[this.state.task.status]]];
+    const prevStatus = task.status;
+    const newStatus = NEXT_STATUS[this.state.task.status];
     this.updateStatusPromise(task.id, newStatus)
-      .then(() => this.handleActiveStatusChange(newStatus));
+      .then(() => this.handleActiveStatusChange(prevStatus, newStatus));
   }
 
   updateStatusPromise(taskId, newStatus) {
@@ -169,13 +216,13 @@ class Task extends React.Component{
 
 	render() {
 	  if(!this.state.task) return <p>Loading...</p>
-	  const nextStatus = NEXT_STATUS[STATUSES_ENUM_TO_VALUE[this.state.task.status]];
+	  const nextStatus = NEXT_STATUS[this.state.task.status];
 		return (
 		    <Card className="text-center" style={{ width: '18rem' }}>
         <Card.Body>
           <Card.Title>{this.state.task.title}</Card.Title>
           <Card.Text>{this.state.task.description}</Card.Text>
-          <Button onClick={this.updateStatusHandler}>{nextStatus}</Button>
+          <Button onClick={this.updateStatusHandler}>{STATUSES_ENUM_TO_VALUE[nextStatus]}</Button>
         </Card.Body>
         <Card.Footer className="text-muted">{this.state.task.points} Points</Card.Footer>
       </Card>
